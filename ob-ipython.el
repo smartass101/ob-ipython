@@ -120,11 +120,11 @@
 ;;; process management
 
 (defun ob-ipython--kernel-cmd (name)
-  (-concat (list "ipython" "kernel" (format "--IPKernelApp.connection_file=emacs-%s.json" name))
+  (-concat (list "ipython" "kernel" (format "--IPKernelApp.connection_file=%s.json" name))
            ob-ipython-kernel-extra-args))
 
 (defun ob-ipython--kernel-repl-cmd (name)
-  (list "ipython" "console" "--existing" (format "emacs-%s.json" name)))
+  (list "ipython" "console" "--existing" (format "%s.json" name)))
 
 (defun ob-ipython--create-process (name cmd)
   (apply 'start-process name (format "*ob-ipython-%s*" name) (car cmd) (cdr cmd)))
@@ -142,7 +142,7 @@
                 procs)
           procs)))
 
-(defun ob-ipython--create-driver ()
+(defun ob-ipython--create-driver (sshserver)
   (when (not (ignore-errors (process-live-p (ob-ipython--get-driver-process))))
     (ob-ipython--create-process "ob-ipython-driver"
                                 (list (locate-file (if (eq system-type 'windows-nt)
@@ -150,7 +150,8 @@
                                                      (or python-shell-interpreter "python"))
                                                    exec-path)
                                       ob-ipython-driver-path
-                                      (number-to-string ob-ipython-driver-port)))
+                                      (number-to-string ob-ipython-driver-port)
+                                      (if sshserver sshserver "")))
     ;; give driver a chance to bind to a port and start serving
     ;; requests. so horrible; so effective.
     (sleep-for 1)))
@@ -330,9 +331,11 @@ VARS contains resolved variable references"
   (if (string= session "none")
       (error "ob-ipython currently only supports evaluation using a session.
 Make sure your src block has a :session param.")
-    (ob-ipython--create-driver)
-    (ob-ipython--create-kernel (ob-ipython--normalize-session session))
-    (ob-ipython--create-repl (ob-ipython--normalize-session session))))
+    (let ((sshserver (cdr (assoc :sshserver params)))
+          (nsession (ob-ipython--normalize-session session)))
+      (ob-ipython--create-driver sshserver)
+      (if (not sshserver) (ob-ipython--create-kernel nsession))
+      (ob-ipython--create-repl nsession))
 
 (provide 'ob-ipython)
 

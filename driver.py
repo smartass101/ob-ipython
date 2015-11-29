@@ -1,8 +1,8 @@
 try:                            # Jupyter and IPython >= 4.0
     import jupyter_client as client
-    find_connection_file = client.find_connection_file
+    client_utils = client
 except ImportError:             # IPython 3
-    from IPython.lib.kernel import find_connection_file
+    import IPython.lib.kernel as client_utils
     import IPython.kernel.blocking.client as client
 
 import sys
@@ -43,7 +43,7 @@ def msg_router(name, ch):
 clients = {}
 
 def create_client(name):
-    cf = find_connection_file('emacs-' + name)
+    cf = client_utils.find_connection_file(name + '.json')
     c = client.BlockingKernelClient(connection_file=cf)
     c.load_connection_file()
     c.start_channels()
@@ -114,6 +114,9 @@ def main(args):
     app = make_app()
     # TODO: parse args properly
     app.listen(args[1])
+    if len(args) > 2 and args[2] != '': # sshserver specified
+        # forward ports to remote sshserver
+        client_utils.tunnel_to_kernel(args[2])
     tornado.ioloop.IOLoop.current().start()
 
 if __name__ == '__main__':
