@@ -114,9 +114,6 @@ def main(args):
     app = make_app()
     # TODO: parse args properly
     app.listen(args[1])
-    if len(args) > 2 and args[2] != '': # sshserver specified
-        # forward ports to remote sshserver
-        client_utils.tunnel_to_kernel(args[2])
     tornado.ioloop.IOLoop.current().start()
 
 if __name__ == '__main__':

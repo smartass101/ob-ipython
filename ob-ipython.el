@@ -123,8 +123,9 @@
   (-concat (list "ipython" "kernel" (format "--IPKernelApp.connection_file=%s.json" name))
            ob-ipython-kernel-extra-args))
 
-(defun ob-ipython--kernel-repl-cmd (name)
-  (list "ipython" "console" "--existing" (format "%s.json" name)))
+(defun ob-ipython--kernel-repl-cmd (name ssh)
+  (-concat (list "ipython" "console" "--existing" (format "%s.json" name)))
+           (if ssh (list "--ssh" ssh)))
 
 (defun ob-ipython--create-process (name cmd)
   (apply 'start-process name (format "*ob-ipython-%s*" name) (car cmd) (cdr cmd)))
@@ -142,7 +143,7 @@
                 procs)
           procs)))
 
-(defun ob-ipython--create-driver (sshserver)
+(defun ob-ipython--create-driver ()
   (when (not (ignore-errors (process-live-p (ob-ipython--get-driver-process))))
     (ob-ipython--create-process "ob-ipython-driver"
                                 (list (locate-file (if (eq system-type 'windows-nt)
@@ -150,8 +151,7 @@
                                                      (or python-shell-interpreter "python"))
                                                    exec-path)
                                       ob-ipython-driver-path
-                                      (number-to-string ob-ipython-driver-port)
-                                      (if sshserver sshserver "")))
+                                      (number-to-string ob-ipython-driver-port)))
     ;; give driver a chance to bind to a port and start serving
     ;; requests. so horrible; so effective.
     (sleep-for 1)))
@@ -298,13 +298,14 @@ a new kernel will be started."
 This function is called by `org-babel-execute-src-block'."
   (let* ((file (cdr (assoc :file params)))
          (session (cdr (assoc :session params)))
+         (ssh (cdr (assoc :ssh params)))
          (result-type (cdr (assoc :result-type params))))
-    (org-babel-ipython-initiate-session session)
+    (org-babel-ipython-initiate-session session params)
     (-when-let (ret (ob-ipython--eval
                      (ob-ipython--execute-request
                       (org-babel-expand-body:generic (encode-coding-string body 'utf-8)
                                                      params (org-babel-variable-assignments:python params))
-                      (ob-ipython--normalize-session session))))
+                      (ob-ipython--normalize-session (if ssh (concat session "-ssh") session))))
       (let ((result (cdr (assoc :result ret)))
             (output (cdr (assoc :output ret))))
         (if (eq result-type 'output)
@@ -331,11 +332,11 @@ VARS contains resolved variable references"
   (if (string= session "none")
       (error "ob-ipython currently only supports evaluation using a session.
 Make sure your src block has a :session param.")
-    (let ((sshserver (cdr (assoc :sshserver params)))
+    (let ((ssh (cdr (assoc :ssh params)))
           (nsession (ob-ipython--normalize-session session)))
-      (ob-ipython--create-driver sshserver)
-      (if (not sshserver) (ob-ipython--create-kernel nsession))
-      (ob-ipython--create-repl nsession))
+      (if (not ssh) (ob-ipython--create-kernel nsession))
+      (ob-ipython--create-repl nsession ssh)
+      (ob-ipython--create-driver))
 
 (provide 'ob-ipython)
 
