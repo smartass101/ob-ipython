@@ -159,8 +159,8 @@
 (defun ob-ipython--get-driver-process ()
   (get-process "ob-ipython-driver"))
 
-(defun ob-ipython--create-repl (name)
-  (run-python (s-join " " (ob-ipython--kernel-repl-cmd name)) nil nil)
+(defun ob-ipython--create-repl (name ssh)
+  (run-python (s-join " " (ob-ipython--kernel-repl-cmd name ssh)) nil nil)
   (format "*%s*" python-shell-buffer-name))
 
 ;;; kernel management
