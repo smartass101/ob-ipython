@@ -218,3 +218,12 @@
    project's issues, so take a look there to see if your problem has a
    quick fix. Otherwise feel free to cut an issue - I'll do my best to
    help.
+*** Errors during and/or long session start-up
+This is because it takes a few seconds for the driver server process to bind to
+a port and the REPL to connect to the kernel and possibly establishing SSH
+tunnels. Executing code before the session is fully established can result in
+errors. Because there is no simple way (to the best knowledge of the authors) to
+find out when the session is fully established, the code execution is postponed
+by several seconds. This waiting period can be customized by the
+`ob-ipython-connection-wait` variable in case it is too short or needlessly
+long.

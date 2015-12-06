@@ -62,6 +62,10 @@
   "Path to the driver script."
   :group 'ob-ipython)
 
+(defcustom ob-ipython-connection-wait 2
+  "Seconds to wait for connections to be established."
+  :group 'ob-ipython)
+
 ;;; utils
 
 (defun ob-ipython--write-base64-string (file b64-string)
@@ -154,14 +158,17 @@
                                       (number-to-string ob-ipython-driver-port)))
     ;; give driver a chance to bind to a port and start serving
     ;; requests. so horrible; so effective.
-    (sleep-for 1)))
+    (sleep-for ob-ipython-connection-wait)))
 
 (defun ob-ipython--get-driver-process ()
   (get-process "ob-ipython-driver"))
 
 (defun ob-ipython--create-repl (name ssh)
   (run-python (s-join " " (ob-ipython--kernel-repl-cmd name ssh)) nil nil)
-  (format "*%s*" python-shell-buffer-name))
+  (format "*%s*" python-shell-buffer-name)
+  ;; SSH tunnels take some time to establish and we must wait for the modified
+  ;; connection file to be written for the driver
+  (if ssh (sleep-for ob-ipython-connection-wait)))
 
 ;;; kernel management
 
