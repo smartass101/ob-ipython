@@ -124,8 +124,8 @@
            ob-ipython-kernel-extra-args))
 
 (defun ob-ipython--kernel-repl-cmd (name ssh)
-  (-concat (list "ipython" "console" "--existing" (format "%s.json" name)))
-           (if ssh (list "--ssh" ssh)))
+  (-concat (list "ipython" "console" "--existing" (format "%s.json" name))
+           (if ssh (list "--ssh" ssh))))
 
 (defun ob-ipython--create-process (name cmd)
   (apply 'start-process name (format "*ob-ipython-%s*" name) (car cmd) (cdr cmd)))
@@ -305,7 +305,7 @@ This function is called by `org-babel-execute-src-block'."
                      (ob-ipython--execute-request
                       (org-babel-expand-body:generic (encode-coding-string body 'utf-8)
                                                      params (org-babel-variable-assignments:python params))
-                      (ob-ipython--normalize-session (if ssh (concat session "-ssh") session))))
+                      (ob-ipython--normalize-session (if ssh (concat session "-ssh") session)))))
       (let ((result (cdr (assoc :result ret)))
             (output (cdr (assoc :output ret))))
         (if (eq result-type 'output)
@@ -336,7 +336,7 @@ Make sure your src block has a :session param.")
           (nsession (ob-ipython--normalize-session session)))
       (if (not ssh) (ob-ipython--create-kernel nsession))
       (ob-ipython--create-repl nsession ssh)
-      (ob-ipython--create-driver))
+      (ob-ipython--create-driver))))
 
 (provide 'ob-ipython)
 
