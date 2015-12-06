@@ -105,8 +105,8 @@ class DebugHandler(tornado.web.RequestHandler):
 
 def make_app():
     return tornado.web.Application([
-        tornado.web.url(r"/execute/(\w+)", ExecuteHandler),
-        tornado.web.url(r"/inspect/(\w+)", InspectHandler),
+        tornado.web.url(r"/execute/(\S+)", ExecuteHandler),
+        tornado.web.url(r"/inspect/(\S+)", InspectHandler),
         tornado.web.url(r"/debug", DebugHandler),
         ])
 
